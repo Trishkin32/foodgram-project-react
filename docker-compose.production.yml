@@ -1,0 +1,37 @@
+version: '3'
+
+volumes:
+  foodgram_data:
+  static:
+  media:
+
+services:
+  foodgram_db:
+    image: postgres:13.10
+    env_file: .env
+    volumes:
+      - foodgram_data:/var/lib/postgresql/data
+  backend:
+    image: lichen32/foodgram_backend
+    env_file: .env
+    volumes:
+      - static:/backend_static
+      - media:/media
+    depends_on:
+      - foodgram_db
+  frontend:
+    env_file: .env
+    image: lichen32/foodgram_frontend
+    command: cp -r /app/build/. /frontend_static/
+    volumes:
+      - static:/frontend_static
+  gateway:
+    image: lichen32/foodgram_gateway
+    env_file: .env
+    ports:
+      - 8080:80
+    volumes:
+      - static:/static
+      - media:/media
+    depends_on:
+      - backend
