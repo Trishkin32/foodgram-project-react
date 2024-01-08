@@ -1,82 +1,75 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from foodgram_backend import settings
 
-class UserUser(AbstractUser):
-    """Переопределенная модель пользователя."""
+from .validators import validate_username
 
-    class Roles(models.TextChoices):
-        USER = "user"
-        MODERATOR = "moderator"
-        ADMIN = "admin"
 
-    role = models.CharField(
-        "Роль",
-        max_length=256,
-        default=Roles.USER,
-        choices=Roles.choices,
+class User(AbstractUser):
+    """Модель пользователя."""
+
+    username = models.CharField(
+        verbose_name='Имя пользователя',
+        max_length=settings.USERNAME_LEN,
+        unique=True,
+        validators=[validate_username],
     )
     email = models.EmailField(
-        "Электронная почта",
-        max_length=254,
+        verbose_name='Электронная почта',
+        max_length=settings.EMAIL_LEN,
         unique=True,
-        error_messages={
-            "unique": "Пользователь с такой электронной почтой уже существует."
-        },
     )
     first_name = models.CharField(
-        "Имя",
-        max_length=150,
+        verbose_name='Имя',
+        max_length=settings.FIRST_NAME_LEN,
     )
     last_name = models.CharField(
-        "Фамилия",
-        max_length=150,
+        verbose_name='Фамилия',
+        max_length=settings.LAST_NAME_LEN,
+    )
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = (
+        'username',
+        'first_name',
+        'last_name',
     )
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = [
-        "username",
-        "first_name",
-        "last_name",
-    ]
-
     class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
-        ordering = ("username",)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        ordering = ('email',)
 
     def __str__(self):
-        return self.username
-
-    @property
-    def is_admin(self):
-        return self.role == "admin" or self.is_superuser
-
-    @property
-    def is_moderator(self):
-        return self.role == "moderator"
+        return self.email
 
 
 class Follow(models.Model):
-    """Модель подписчика."""
+    """Модель подписки."""
 
     user = models.ForeignKey(
-        UserUser,
+        User,
         on_delete=models.CASCADE,
-        related_name="follower",
-        verbose_name="Пользователь"
+        related_name='follower',
+        verbose_name='Подписчик',
     )
     following = models.ForeignKey(
-        UserUser,
+        User,
         on_delete=models.CASCADE,
-        related_name="following",
-        verbose_name="Подписчик"
+        related_name='following',
+        verbose_name='Автор',
     )
 
     class Meta:
-        unique_together = ["user", "following"]
-        verbose_name = "Подписчик"
-        verbose_name_plural = "Подписчики"
-
-    def __str__(self):
-        return f"{self.user} подписан на {self.following}"
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='Подписаться можно только один раз на одного автора.'
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('following')),
+                name='Нельзя подписаться на самого себя.'
+            ),
+        ]
