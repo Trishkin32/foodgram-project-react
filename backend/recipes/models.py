@@ -1,11 +1,9 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
 from foodgram_backend.settings import (HEX_LEN, MAX_COOKING_TIME,
-                                       MAX_INGR_AMOUNT,
-                                       MEASURE_UNIT_LEN, MIN_COOKING_TIME,
-                                       MIN_INGR_AMOUNT, NAME_LEN, SLUG_LEN,
-                                       TAG_LEN)
+                                       MAX_INGR_AMOUNT, MEASURE_UNIT_LEN,
+                                       MIN_COOKING_TIME, MIN_INGR_AMOUNT,
+                                       NAME_LEN, SLUG_LEN, TAG_LEN)
 from users.models import User
 
 from .validators import validate_hex

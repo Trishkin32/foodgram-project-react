@@ -1,9 +1,8 @@
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
+from recipes.models import Favorite, ShoppingCart
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
-
-from recipes.models import Favorite, ShoppingCart
 from users.models import Follow
 
 
