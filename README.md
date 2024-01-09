@@ -1,5 +1,6 @@
 # praktikum_new_diplom
 
-супер юзер
-vlad@yandex.ru
-1
+Для проверки:
+
+1. Адрес сервера: foodgram32.didns.ru
+2. Логин администратора: trishkin.vlad197@yandex.ru, пароль: Vlad
