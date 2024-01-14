@@ -5,7 +5,7 @@ from rest_framework.response import Response
 class RecipesPagination(PageNumberPagination):
     """Переопределенный класс базового пагинатора - рецепты."""
 
-    page_size_query_param = "limit"
+    page_size_query_param = 'limit'
 
 
 class IngredientPagination(PageNumberPagination):

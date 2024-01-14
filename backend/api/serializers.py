@@ -1,8 +1,8 @@
-from foodgram_backend import settings
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from django.conf import settings
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
+
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Follow, User
 from users.validators import validate_username
 
@@ -30,7 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_is_subscribed(self, obj):
-        follower = self.context.get('request').user
+        follower = self.context['request'].user
         if follower.is_anonymous:
             return False
         return Follow.objects.filter(
@@ -212,14 +212,14 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         return (
             user.is_authenticated
             and user.favorites.filter(recipe=obj).exists()
         )
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         return (
             user.is_authenticated
             and user.carts.filter(recipe=obj).exists()
@@ -257,6 +257,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         required=True,
     )
     cooking_time = serializers.IntegerField(
+        max_value=settings.MAX_COOKING_TIME,
+        min_value=settings.MIN_COOKING_TIME,
         required=True,
     )
 
@@ -310,13 +312,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             )
         return image
 
-    def validate_cooking_time(self, cooking_time):
-        if cooking_time < 1:
-            raise serializers.ValidationError(
-                'Время приготовления должно быть больше 0.'
-            )
-        return cooking_time
-
     @staticmethod
     def create_ingredients(recipe, ingredients):
         ingredients.sort(
@@ -346,18 +341,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
 
-        if 'tags' in validated_data:
+        if 'tags' not in validated_data:
             instance.tags.clear()
             instance.tags.set(validated_data.pop('tags'))
-        else:
-            raise ValidationError('Отсутствует поле tags.')
 
-        if 'recipe_ingredients' in validated_data:
+        if 'recipe_ingredients' not in validated_data:
             RecipeIngredient.objects.filter(recipe=instance).delete()
             ingredients = validated_data.pop('recipe_ingredients')
             self.create_ingredients(instance, ingredients)
-        else:
-            raise ValidationError('Отсутствует поле ingredients.')
 
         return super().update(instance, validated_data)
 
@@ -399,7 +390,7 @@ class FollowSerializer(serializers.ModelSerializer):
     def get_recipes(self, following):
         request = self.context.get('request')
         recipes_limit = int(
-            request.query_params.get('recipes_limit')
+            request.query_params['recipes_limit']
             or 0
         )
         recipes = Recipe.objects.filter(
