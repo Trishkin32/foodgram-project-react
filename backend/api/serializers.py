@@ -1,8 +1,7 @@
 from django.conf import settings
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Follow, User
 from users.validators import validate_username
 
