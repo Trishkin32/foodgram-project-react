@@ -2,22 +2,22 @@ from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+
+from api.filters import IngredientFilter, RecipeFilter
+from api.mixins import AddDeleteMixin, ListCreateRetrieveViewSet
+from api.paginators import IngredientPagination, RecipesPagination
+from api.serializers import (ChangePasswordSerializer, FollowSerializer,
+                             IngredientSerializer, RecipeInListSerializer,
+                             RecipeReadSerializer, RecipeWriteSerializer,
+                             TagSerializer, UserLoginSerializer,
+                             UserRegistrationSerializer, UserSerializer)
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import User
 from users.permissions import AuthorOrRead
-
-from .filters import IngredientFilter, RecipeFilter
-from .mixins import AddDeleteMixin, ListCreateRetrieveViewSet
-from .paginators import IngredientPagination, RecipesPagination
-from .serializers import (ChangePasswordSerializer, FollowSerializer,
-                          IngredientSerializer, RecipeInListSerializer,
-                          RecipeReadSerializer, RecipeWriteSerializer,
-                          TagSerializer, UserLoginSerializer,
-                          UserRegistrationSerializer, UserSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

@@ -1,11 +1,11 @@
 from django.conf import settings
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
+from api.utils import Base64ImageField
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Follow, User
 from users.validators import validate_username
-
-from .utils import Base64ImageField
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,10 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
         follower = self.context['request'].user
         if follower.is_anonymous:
             return False
-        return Follow.objects.filter(
-            user=follower,
-            following=obj
-        ).exists()
+        return obj.following.filter(user=follower).exists()
 
 
 class UserRegistrationSerializer(UserSerializer):
@@ -345,7 +342,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             instance.tags.set(validated_data.pop('tags'))
 
         if 'recipe_ingredients' not in validated_data:
-            RecipeIngredient.objects.filter(recipe=instance).delete()
+            RecipeIngredient.recipe_ingredients.delete()
             ingredients = validated_data.pop('recipe_ingredients')
             self.create_ingredients(instance, ingredients)
 
@@ -386,20 +383,13 @@ class FollowSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    def get_recipes(self, following):
-        request = self.context.get('request')
-        recipes_limit = int(
-            request.query_params['recipes_limit']
-            or 0
-        )
-        recipes = Recipe.objects.filter(
-            author=following.following
-        )[:recipes_limit]
+    def get_recipes(self, author):
+        limit = self.context.get('request').query_params['recipes_limit']
+        recipes = author.recipes.all()
+        if limit:
+            recipes = recipes[:int(limit)]
         serializer = RecipeInListSerializer(
             recipes,
             many=True,
-            read_only=True,
-            context={'request': request}
         )
-
         return serializer.data
