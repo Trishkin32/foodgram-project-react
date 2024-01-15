@@ -32,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
         follower = self.context['request'].user
         if follower.is_anonymous:
             return False
-        return obj.following.filter(user=follower).exists()
+        return follower.follower.filter(following=obj).exists()
 
 
 class UserRegistrationSerializer(UserSerializer):
@@ -342,7 +342,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             instance.tags.set(validated_data.pop('tags'))
 
         if 'recipe_ingredients' not in validated_data:
-            RecipeIngredient.recipe_ingredients.delete()
+            instance.ingredients.all.delete()
             ingredients = validated_data.pop('recipe_ingredients')
             self.create_ingredients(instance, ingredients)
 
@@ -383,13 +383,18 @@ class FollowSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    def get_recipes(self, author):
-        limit = self.context.get('request').query_params['recipes_limit']
-        recipes = author.recipes.all()
-        if limit:
-            recipes = recipes[:int(limit)]
+    def get_recipes(self, following):
+        request = self.context.get('request')
+        recipes_limit = int(
+            request.query_params['recipes_limit']
+            or 0
+        )
+        recipes = following.following.recipes.all()[:recipes_limit]
         serializer = RecipeInListSerializer(
             recipes,
             many=True,
+            read_only=True,
+            context={'request': request}
         )
+
         return serializer.data
